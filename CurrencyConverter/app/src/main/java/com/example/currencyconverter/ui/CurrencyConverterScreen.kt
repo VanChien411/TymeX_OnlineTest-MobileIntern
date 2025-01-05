@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.AbsoluteCutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,32 +30,51 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.currencyconverter.R
 import com.example.currencyconverter.viewmodel.CurrencyViewModel
-
+var viewModel: CurrencyViewModel = CurrencyViewModel()
 
 @Preview()
 @Composable
 fun CurrencyConverterScreen() {
-    var viewModel: CurrencyViewModel = CurrencyViewModel()
+
     val exchangeRates by viewModel.exchangeRates.observeAsState()
+    val moneyTypes by viewModel.moneyTypes.observeAsState()
 
-    // UI chính
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(16.dp),
+    Column ( modifier = Modifier
+        .fillMaxSize()
+        .background(Color.White).windowInsetsPadding(WindowInsets.statusBars),
+        horizontalAlignment = Alignment.CenterHorizontally)
+    {
+        viewModel.fetchExchangeRates()
+        if (exchangeRates == null) {
+            Text("Loading exchange rates...")
+        } else {
+            // Hiển thị tỷ giá
+            val rates = exchangeRates!!.rates // Lấy tỷ giá
+            Text("Base currency: ${exchangeRates!!.base}")
 
-
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
+            LazyColumn {
+                items(rates.entries.toList()) { rate ->
+                    Text("${rate.key}: ${rate.value}")
+                }
+            }
+        }
         TextHeader("Chuyển đổi tiền tệ")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(16.dp),
 
-        Spacer(modifier = Modifier.height(10.dp))
-        CutLeftBox()
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
 
-    //        // Khi chưa có dữ liệu
+
+            Spacer(modifier = Modifier.height(10.dp))
+            CutLeftBox(fromNumber = 0.0, toNumber = 0.0, from = "usd", to = "vnd", list = moneyTypes?.toList(), result = "sefsef" )
+
+
+            //        // Khi chưa có dữ liệu
 //        if (exchangeRates == null) {
 //            Text("Loading exchange rates...")
 //        } else {
@@ -74,7 +95,11 @@ fun CurrencyConverterScreen() {
 //        Button(onClick = { viewModel.fetchExchangeRates() }) {
 //            Text("Refresh Rates")
 //        }
+        }
     }
+    // UI chính
+
+
 }
 @Composable
 fun TextHeader(
@@ -83,7 +108,7 @@ fun TextHeader(
     style: TextStyle = MaterialTheme.typography.headlineMedium, // Kiểu chữ mặc định
     fontWeight: FontWeight? = FontWeight.Bold, // Trọng lượng chữ tùy chỉnh
     textAlign: TextAlign = TextAlign.Center, // Căn chỉnh văn bản
-    modifier: Modifier = Modifier.padding(0.dp).fillMaxWidth().background(Color.Black) // Modifier mặc định
+    modifier: Modifier = Modifier.background(Color.Black).padding(0.dp,10.dp).fillMaxWidth() // Modifier mặc định
 
 ) {
     Text(
@@ -92,14 +117,17 @@ fun TextHeader(
         color = color,
         fontWeight = fontWeight,
         modifier = modifier,
-        textAlign = textAlign
+        textAlign = textAlign,
+
+
     )
 }
 @Composable
 fun NumberMoney(
     number: Double,
     color: Color = Color.Black,
-    style: TextStyle = MaterialTheme.typography.bodyMedium
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    onValueChange: () -> Unit = {}
 ) {
     val formattedNumber = String.format("%.2f", number) // Định dạng số với 2 chữ số thập phân
 //    Text(
@@ -117,9 +145,10 @@ fun NumberMoney(
     TextField(
         value = text,
         onValueChange = { newValue ->
-            // Kiểm tra nếu giá trị nhập vào là một số
-            if (newValue.all { it.isDigit() }) {
+            // Kiểm tra nếu giá trị nhập vào là một số hợp lệ
+            if (newValue.isEmpty() || newValue.toDoubleOrNull() != null) {
                 text = newValue
+                onValueChange()
             }
         },
         keyboardOptions = KeyboardOptions.Default.copy(
@@ -160,10 +189,10 @@ fun TextLabel(content: String,fontSize: TextUnit = 20.sp, textAlign: TextAlign =
 
 }
 @Composable
-fun TextWithDropdown(   style: TextStyle = MaterialTheme.typography.bodyLarge) {
+fun TextWithDropdown( money:Double,onChageText: (Double)-> Unit = {},  style: TextStyle = MaterialTheme.typography.bodyLarge, moneyType : String? = null, items : List<String>? = null) {
     var expanded by remember { mutableStateOf(false) }
-    var moneyType by remember { mutableStateOf("USD") }
-    val items = listOf("USD", "EUR", "GBP", "INR")
+    var selectedMoneyType  by remember { mutableStateOf(moneyType) }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -182,7 +211,7 @@ fun TextWithDropdown(   style: TextStyle = MaterialTheme.typography.bodyLarge) {
 
             modifier = Modifier.padding(15.dp,0.dp).weight(1f) // Take up the remaining space
         ) {
-            NumberMoney(number = 1234.56)
+            NumberMoney(number = money)
         }
         Column(
             horizontalAlignment = Alignment.End,
@@ -191,17 +220,19 @@ fun TextWithDropdown(   style: TextStyle = MaterialTheme.typography.bodyLarge) {
 
         ) {
             Row( verticalAlignment = Alignment.CenterVertically,) {
-                Text(
-                    text = moneyType,
-                    fontSize = 25.sp,
-                    style = style,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentHeight(Alignment.CenterVertically)
+                selectedMoneyType?.let {
+                    Text(
+                        text = it,
+                        fontSize = 25.sp,
+                        style = style,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Right,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .wrapContentHeight(Alignment.CenterVertically)
 
-                )
+                    )
+                }
                 IconButton(onClick = {  expanded = !expanded}) {
 
                     Icon(Icons.Default.ArrowDropDown, contentDescription = "More options",Modifier.width(30.dp))
@@ -210,10 +241,10 @@ fun TextWithDropdown(   style: TextStyle = MaterialTheme.typography.bodyLarge) {
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    items.forEach { item ->
+                    items?.forEach { item ->
                         DropdownMenuItem(
                             text = { Text(item) },
-                            onClick = { moneyType = item
+                            onClick = { selectedMoneyType = item
                                 expanded = !expanded}
                         )
 
@@ -246,7 +277,7 @@ fun ButtonDefault(onClick: () -> Unit, text: String) {
     }
 }
 @Composable
-fun CutLeftBox() {
+fun CutLeftBox(fromNumber: Double ,toNumber:Double,list: List<String>?, from: String, to:String, result: String) {
     Surface(
         shape = AbsoluteCutCornerShape(topRightPercent = 10),
         modifier = Modifier.fillMaxWidth()
@@ -274,19 +305,19 @@ fun CutLeftBox() {
                 ) {
                     Column {
                         TextLabel("Số tiền")
-                        TextWithDropdown()
+                        TextWithDropdown(fromNumber, moneyType = from , items = list)
                         Spacer(modifier = Modifier.height(20.dp))
                         Image(
                             painter = painterResource(id = R.drawable.swap_calls), // Thay R.drawable.image bằng tên tệp ảnh của bạn
                             contentDescription = "Image Description", // Mô tả cho ảnh
-                            modifier = Modifier.fillMaxWidth().height(50.dp) // Thêm modifiers nếu cần
+                            modifier = Modifier.fillMaxWidth().height(40.dp) // Thêm modifiers nếu cần
                         )
                         TextLabel("Chuyển thành")
-                        TextWithDropdown()
+                        TextWithDropdown(toNumber, moneyType = to, items = list)
                     }
 
                 }
-                TextLabel("100usd = 2000.000vnd", fontSize = 25.sp, textAlign = TextAlign.Center)
+                TextLabel(result, fontSize = 25.sp, textAlign = TextAlign.Center)
                 Row (
                     modifier = Modifier .padding(vertical = 10.dp) // Khoảng cách phía trên và dưới
                 ){
@@ -300,7 +331,7 @@ fun CutLeftBox() {
                 }
 
                 Row(){
-                    ButtonDefault(onClick = {}, "Chuyển đổi")
+                    ButtonDefault(onClick = { }, "Chuyển đổi")
                     TextLabel("Thời gian cập nhập giá\n12/32/3333 hh/mm/ss", fontSize = 15.sp, textAlign = TextAlign.Right, color = Color.Gray)
 
                 }
