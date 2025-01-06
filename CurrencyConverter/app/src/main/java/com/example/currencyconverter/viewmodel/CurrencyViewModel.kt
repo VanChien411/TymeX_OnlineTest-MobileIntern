@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import retrofit2.Response
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 
 class CurrencyViewModel() : ViewModel() {
     private val repository: CurrencyRepository = CurrencyRepository()
@@ -125,8 +127,9 @@ class CurrencyViewModel() : ViewModel() {
             else{
 
                 _toNumber.value = _fromNumber.value?.div(fromRate)?.times(toRate)
-                val newToNumber = String.format("%.3f", _toNumber.value ?: 0.0)
-                _result.postValue(_fromNumber.value.toString()+ " " + _fromRate.value +" = "  + newToNumber +" "+_toRate.value)
+                val decimalFormat: DecimalFormat  = DecimalFormat("#.##", DecimalFormatSymbols(Locale.US))
+
+                _result.postValue(_fromNumber.value.toString()+ " " + _fromRate.value +" = "  + decimalFormat.format(_toNumber.value) +" "+_toRate.value)
                 _timeLine.value = convertTimestampToDateTime(rates.timestamp)
             }
 

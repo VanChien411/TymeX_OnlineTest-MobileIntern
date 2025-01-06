@@ -101,7 +101,10 @@ fun Loading(){
     val context = LocalContext.current
     if(isLoading == true){
         Text(
-            text = "Đang tải dữ liệu..."
+            text = "Đang tải dữ liệu...",
+            color = MaterialTheme.colorScheme.onBackground
+
+
         )
     }
     if(exchangeRates?.errorBody() != null){
