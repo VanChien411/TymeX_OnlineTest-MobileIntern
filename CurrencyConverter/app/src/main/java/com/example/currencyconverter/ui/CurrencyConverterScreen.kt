@@ -1,14 +1,16 @@
 package com.example.currencyconverter.ui.screens
 
-
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.AbsoluteCutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,62 +38,126 @@ var viewModel: CurrencyViewModel = CurrencyViewModel()
 @Preview()
 @Composable
 fun CurrencyConverterScreen() {
+    LaunchedEffect(Unit) {
+        viewModel.fetchExchangeRates()
+    }
 
-    viewModel.fetchExchangeRates()
-    Column ( modifier = Modifier
-        .fillMaxSize()
-        .background( MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars),
-        horizontalAlignment = Alignment.CenterHorizontally)
-    {
-
-//        Load()
-        TextHeader("Chuyển đổi tiền tệ")
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+            .background( MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.statusBars)
+    ) {
+        val isSmallScreen = maxWidth < 600.dp
+        val i = maxWidth
+        println(i)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                ,
+            ,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            TextHeader("Chuyển đổi tiền tệ")
+            Loading()
+            if(isSmallScreen){
+                Column ( modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally)
+                {
+                    Column(
+                        modifier = Modifier
 
+                            .padding(16.dp)
+                        ,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
 
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
+                        CutLeftBox()
 
-            Spacer(modifier = Modifier.height(10.dp))
-            // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
-            CutLeftBox()
+                    }
 
+                    //
+                    Column(
+                        modifier = Modifier
 
-            //        // Khi chưa có dữ liệu
-//        if (exchangeRates == null) {
-//            Text("Loading exchange rates...")
-//        } else {
-//            // Hiển thị tỷ giá
-//            val rates = exchangeRates!!.rates // Lấy tỷ giá
-//            Text("Base currency: ${exchangeRates!!.base}")
-//
-//            LazyColumn {
-//                items(rates.entries.toList()) { rate ->
-//                    Text("${rate.key}: ${rate.value}")
-//                }
-//            }
-//        }
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        // Nút tải lại dữ liệu
-//        Button(onClick = { viewModel.fetchExchangeRates() }) {
-//            Text("Refresh Rates")
-//        }
-        }
+                            .padding(16.dp)
+                        ,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
+                        CutLeftBox()
+
+                    }
+                }
+
+            }else{
+                Row ( modifier = Modifier
+                    .fillMaxSize()
+                    .background( MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars),
+                    verticalAlignment = Alignment.CenterVertically)
+                {
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(16.dp)
+                        ,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
+                        CutLeftBox()
+
+                    }
+
+                    //
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(16.dp)
+                        ,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
+                        CutLeftBox()
+
+                    }
+                }
+            }
+         }
+
     }
-    // UI chính
 
 
 }
 @Composable
-fun Load(){
+fun Loading(){
+
     val exchangeRates by viewModel.exchangeRates.observeAsState()
-    val moneyTypes by viewModel.moneyTypes.observeAsState()
+    val isLoading by viewModel.isLoading.observeAsState()
+    val networkError by viewModel.networkError.observeAsState()
+    val context = LocalContext.current
+    if(isLoading == true){
+        Text(
+            text = "Đang tải dữ liệu...",
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+    if(exchangeRates?.errorBody() != null){
+        Toast.makeText(context,"Lỗi api ${ exchangeRates?.message()}", Toast.LENGTH_LONG).show()
+
+    }
+    if(networkError == true){
+        Toast.makeText(context, "Lỗi mạng hãy kiểm tra kết nối", Toast.LENGTH_LONG).show()
+    }
 
 }
 
@@ -119,21 +186,8 @@ fun TextHeader(
 fun NumberMoney(
     number: Double,
     color: Color = Color.Black,
-    style: TextStyle = MaterialTheme.typography.bodyMedium,
     onChageText: (Double) -> Unit = {}
 ) {
-    val formattedNumber = String.format("%.2f", number) // Định dạng số với 2 chữ số thập phân
-//    Text(
-//        text = "$prefix$formattedNumber$suffix",
-//        color = color,
-//        style = style,
-//        fontSize = 25.sp,
-//        fontWeight = FontWeight.Bold,
-//        modifier = Modifier
-//            .height(70.dp)
-//            .wrapContentHeight(Alignment.CenterVertically) // Căn giữa nội dung theo chiều dọc
-//    )
-
 
     OutlinedTextField(
         value = number.toString(),
@@ -340,7 +394,7 @@ fun CutLeftBox() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(Color.Black)
+                            .background(MaterialTheme.colorScheme.onBackground)
 
                     )
                 }

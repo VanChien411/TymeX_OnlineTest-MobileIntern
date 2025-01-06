@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.currencyconverter.data.network.CurrencyApi
 import com.example.currencyconverter.data.network.ExchangeRatesDataResponse
 import com.example.currencyconverter.data.network.RetrofitInstance
+import retrofit2.Response
 import java.io.IOException
 
 class CurrencyRepository {
@@ -28,26 +29,25 @@ class CurrencyRepository {
     )
 
     //
-    suspend fun getExchangeRatesData(): ExchangeRatesDataResponse? {
-        return exchangeRatesData
+    suspend fun getExchangeRatesData(): Response<ExchangeRatesDataResponse>? {
+        var response: Response<ExchangeRatesDataResponse>? = null
         return try {
-            val response = api.getExchangeRatesData(apiKey)
+            response = api.getExchangeRatesData(apiKey)
             if (response.isSuccessful) {
                 Log.d("API_CALL", "Response Body: ${response.body()}")
-                response.body()
             } else {
                 Log.e(
                     "API_CALL",
                     "Error Code: ${response.code()}, Error Body: ${response.errorBody()?.string()}"
                 )
-                null
             }
+            response
         } catch (e: IOException) {
             Log.e("API_CALL", "Network error: ${e.message}")
             null
         } catch (e: Exception) {
             Log.e("API_CALL", "Unexpected error: ${e.message}")
-            null
+            null  // Trả về null nếu có lỗi khác
         }
     }
 }
