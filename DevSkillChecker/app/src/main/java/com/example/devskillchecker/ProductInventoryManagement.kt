@@ -1,5 +1,9 @@
 package com.example.devskillchecker
 
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+
 class ProductInventoryManagement {
 }
 
@@ -18,8 +22,10 @@ fun main() {
         Product("Smartwatch", 199.99, 3)
     )
 
+
     // Calculate the total inventory value
-    println(totalInventoryValue(productList))
+    val decimalFormat: DecimalFormat = DecimalFormat("#.##", DecimalFormatSymbols(Locale.US))
+    println( decimalFormat.format(totalInventoryValue(productList)) )
 
     // Find the most expensive product
     val mostExpensiveProduct = mostExpensiveProduct(productList)
