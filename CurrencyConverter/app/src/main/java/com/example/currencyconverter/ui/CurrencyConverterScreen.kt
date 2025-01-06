@@ -1,6 +1,8 @@
 package com.example.currencyconverter.ui.screens
 
 
+import android.widget.TextView
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,16 +38,18 @@ var viewModel: CurrencyViewModel = CurrencyViewModel()
 @Preview()
 @Composable
 fun CurrencyConverterScreen() {
-
-    viewModel.fetchExchangeRates()
+    LaunchedEffect(Unit) {
+        viewModel.fetchExchangeRates()
+    }
     Column ( modifier = Modifier
         .fillMaxSize()
         .background( MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars),
         horizontalAlignment = Alignment.CenterHorizontally)
     {
 
-//        Load()
+
         TextHeader("Chuyển đổi tiền tệ")
+        Loading()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -88,9 +93,24 @@ fun CurrencyConverterScreen() {
 
 }
 @Composable
-fun Load(){
-    val exchangeRates by viewModel.exchangeRates.observeAsState()
+fun Loading(){
     val moneyTypes by viewModel.moneyTypes.observeAsState()
+    val exchangeRates by viewModel.exchangeRates.observeAsState()
+    val isLoading by viewModel.isLoading.observeAsState()
+    val networkError by viewModel.networkError.observeAsState()
+    val context = LocalContext.current
+    if(isLoading == true){
+        Text(
+            text = "Đang tải dữ liệu..."
+        )
+    }
+    if(exchangeRates?.errorBody() != null){
+        Toast.makeText(context,"Lỗi api ${ exchangeRates?.message()}", Toast.LENGTH_LONG).show()
+
+    }
+    if(networkError == true){
+        Toast.makeText(context, "Lỗi mạng hãy kiểm tra kết nối", Toast.LENGTH_LONG).show()
+    }
 
 }
 
@@ -340,7 +360,7 @@ fun CutLeftBox() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(Color.Black)
+                            .background(MaterialTheme.colorScheme.onBackground)
 
                     )
                 }

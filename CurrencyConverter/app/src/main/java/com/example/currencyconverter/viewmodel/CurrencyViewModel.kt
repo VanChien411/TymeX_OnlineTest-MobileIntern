@@ -12,12 +12,16 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import retrofit2.Response
 
 class CurrencyViewModel() : ViewModel() {
     private val repository: CurrencyRepository = CurrencyRepository()
-    private val _exchangeRates = MutableLiveData<ExchangeRatesDataResponse>()
-    val exchangeRates: LiveData<ExchangeRatesDataResponse> = _exchangeRates
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading : LiveData<Boolean> get() = _isLoading
+    private val _networkError = MutableLiveData<Boolean?>()
+    val networkError : LiveData<Boolean?> get() = _networkError
+    private val _exchangeRates = MutableLiveData<Response<ExchangeRatesDataResponse>?>()
+    val exchangeRates: LiveData<Response<ExchangeRatesDataResponse>?> = _exchangeRates
     private val _moneyTypes = MutableLiveData<Set<String>>()
     val moneyTypes: LiveData<Set<String>> get() = _moneyTypes
     private val _result = MutableLiveData<String>("")
@@ -50,42 +54,55 @@ class CurrencyViewModel() : ViewModel() {
 
 
     fun fetchExchangeRates() {
+        _isLoading.value = true
+        _networkError.value = null
         viewModelScope.launch {
-            val rates = repository.getExchangeRatesData()
-            rates?.let {
-                _exchangeRates.postValue(it)
-
-                _moneyTypes.postValue(it.rates.keys)
-                // Kiểm tra số lượng phần tử trong rates
-                when (it.rates.size) {
-                    1 -> {
-                        // Nếu có 1 phần tử, gán cho cả _fromRate và _toRate
-                        val firstKey = it.rates.keys.first()
-                        _fromRate.postValue(firstKey)
-                        _toRate.postValue(firstKey)
-                    }
-                    2 -> {
-                        // Nếu có 2 phần tử, lấy 2 key đầu tiên và gán cho _fromRate và _toRate
-                        val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
-                        val a = ratesList[0]  // Key đầu tiên
-                        val b = ratesList[1]  // Key thứ hai
-
-                        _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
-                        _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
-                    }
-                    else -> {
-                        // Nếu có nhiều hơn 2 phần tử, chỉ lấy 2 phần tử đầu tiên và gán cho _fromRate và _toRate
-                        val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
-                        val a = ratesList[0]  // Key đầu tiên
-                        val b = ratesList[1]  // Key thứ hai
-
-                        _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
-                        _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
-                    }
+            try {
+                val rates = repository.getExchangeRatesData()
+                if(rates == null){
+                    _networkError.value = true
                 }
-            } ?: run {
-                Log.e("ExchangeRates", "Failed to fetch exchange rates")
+                _exchangeRates.postValue(rates)
+                rates?.body()?.let {
+
+                    _moneyTypes.postValue(it.rates.keys)
+                    // Kiểm tra số lượng phần tử trong rates
+                    when (it.rates.size) {
+                        1 -> {
+                            // Nếu có 1 phần tử, gán cho cả _fromRate và _toRate
+                            val firstKey = it.rates.keys.first()
+                            _fromRate.postValue(firstKey)
+                            _toRate.postValue(firstKey)
+                        }
+                        2 -> {
+                            // Nếu có 2 phần tử, lấy 2 key đầu tiên và gán cho _fromRate và _toRate
+                            val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
+                            val a = ratesList[0]  // Key đầu tiên
+                            val b = ratesList[1]  // Key thứ hai
+
+                            _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
+                            _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
+                        }
+                        else -> {
+                            // Nếu có nhiều hơn 2 phần tử, chỉ lấy 2 phần tử đầu tiên và gán cho _fromRate và _toRate
+                            val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
+                            val a = ratesList[0]  // Key đầu tiên
+                            val b = ratesList[1]  // Key thứ hai
+
+                            _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
+                            _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
+                        }
+                    }
+                } ?: run {
+                    Log.e("ExchangeRates", "Failed to fetch exchange rates")
+                }
+            } catch (e: Exception) {
+                // Handle network error
+                _networkError.value = true
+            } finally {
+                _isLoading.value = false
             }
+
 
         }
     }
@@ -94,7 +111,7 @@ class CurrencyViewModel() : ViewModel() {
     fun exchangeRates(){
         viewModelScope.launch {
 
-            val rates =_exchangeRates.value
+            val rates =_exchangeRates.value?.body()
 
 
 // Lấy tỷ giá từ đồng tiền cơ sở (USD) sang `fromCurrency` và `toCurrency`
