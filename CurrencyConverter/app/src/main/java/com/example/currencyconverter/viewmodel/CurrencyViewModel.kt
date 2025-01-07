@@ -29,10 +29,10 @@ class CurrencyViewModel() : ViewModel() {
     private val _result = MutableLiveData<String>("")
     val result: LiveData<String> get() = _result
 
-    private val _fromNumber = MutableLiveData<Double>(0.0)
-    val fromNumber: LiveData<Double> get() = _fromNumber
-    private val _toNumber = MutableLiveData<Double>(0.0)
-    val toNumber: LiveData<Double> get() = _toNumber
+    private val _fromNumber = MutableLiveData<Double?>(0.0)
+    val fromNumber: LiveData<Double?> get() = _fromNumber
+    private val _toNumber = MutableLiveData<Double?>(0.0)
+    val toNumber: LiveData<Double?> get() = _toNumber
 
     private val _fromRate = MutableLiveData<String>("")
     val fromRate: LiveData<String> get() = _fromRate
@@ -41,10 +41,10 @@ class CurrencyViewModel() : ViewModel() {
     private val _timeLine = MutableLiveData<String>("")
     val timeLine: LiveData<String> get() = _timeLine
 
-    fun updateToNumber(newValue: Double) {
+    fun updateToNumber(newValue: Double?) {
         _toNumber.value = newValue
     }
-    fun updateFromNumber(newValue: Double) {
+    fun updateFromNumber(newValue: Double?) {
         _fromNumber.value = newValue
     }
     fun updateFromRate(newValue: String){
@@ -69,32 +69,35 @@ class CurrencyViewModel() : ViewModel() {
 
                     _moneyTypes.postValue(it.rates.keys)
                     // Kiểm tra số lượng phần tử trong rates
-                    when (it.rates.size) {
-                        1 -> {
-                            // Nếu có 1 phần tử, gán cho cả _fromRate và _toRate
-                            val firstKey = it.rates.keys.first()
-                            _fromRate.postValue(firstKey)
-                            _toRate.postValue(firstKey)
-                        }
-                        2 -> {
-                            // Nếu có 2 phần tử, lấy 2 key đầu tiên và gán cho _fromRate và _toRate
-                            val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
-                            val a = ratesList[0]  // Key đầu tiên
-                            val b = ratesList[1]  // Key thứ hai
+                    if(_fromRate.value.isNullOrEmpty() || _toRate.value.isNullOrEmpty()){
+                        when (it.rates.size) {
+                            1 -> {
+                                // Nếu có 1 phần tử, gán cho cả _fromRate và _toRate
+                                val firstKey = it.rates.keys.first()
+                                _fromRate.postValue(firstKey)
+                                _toRate.postValue(firstKey)
+                            }
+                            2 -> {
+                                // Nếu có 2 phần tử, lấy 2 key đầu tiên và gán cho _fromRate và _toRate
+                                val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
+                                val a = ratesList[0]  // Key đầu tiên
+                                val b = ratesList[1]  // Key thứ hai
 
-                            _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
-                            _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
-                        }
-                        else -> {
-                            // Nếu có nhiều hơn 2 phần tử, chỉ lấy 2 phần tử đầu tiên và gán cho _fromRate và _toRate
-                            val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
-                            val a = ratesList[0]  // Key đầu tiên
-                            val b = ratesList[1]  // Key thứ hai
+                                _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
+                                _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
+                            }
+                            else -> {
+                                // Nếu có nhiều hơn 2 phần tử, chỉ lấy 2 phần tử đầu tiên và gán cho _fromRate và _toRate
+                                val ratesList = it.rates.keys.take(2).toList()  // Lấy 2 phần tử đầu tiên của map rates
+                                val a = ratesList[0]  // Key đầu tiên
+                                val b = ratesList[1]  // Key thứ hai
 
-                            _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
-                            _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
+                                _fromRate.postValue(a)  // Lấy key đầu tiên và gán cho _fromRate
+                                _toRate.postValue(b)    // Lấy key thứ hai và gán cho _toRate
+                            }
                         }
                     }
+
                 } ?: run {
                     Log.e("ExchangeRates", "Failed to fetch exchange rates")
                 }
@@ -115,8 +118,6 @@ class CurrencyViewModel() : ViewModel() {
 
             val rates =_exchangeRates.value?.body()
 
-
-// Lấy tỷ giá từ đồng tiền cơ sở (USD) sang `fromCurrency` và `toCurrency`
             val fromRate = rates?.rates?.get(_fromRate.value)
             val toRate = rates?.rates?.get(_toRate.value)
 
@@ -129,7 +130,7 @@ class CurrencyViewModel() : ViewModel() {
                 _toNumber.value = _fromNumber.value?.div(fromRate)?.times(toRate)
                 val decimalFormat: DecimalFormat  = DecimalFormat("#.##", DecimalFormatSymbols(Locale.US))
 
-                _result.postValue(_fromNumber.value.toString()+ " " + _fromRate.value +" = "  + decimalFormat.format(_toNumber.value) +" "+_toRate.value)
+                _result.postValue((_fromNumber.value?.toString() ?: "0.0") + " " + _fromRate.value +" = "  + decimalFormat.format(_toNumber.value?:0.0) +" "+_toRate.value)
                 _timeLine.value = convertTimestampToDateTime(rates.timestamp)
             }
 
@@ -150,9 +151,9 @@ class CurrencyViewModel() : ViewModel() {
 
     }
     fun convertTimestampToDateTime(timestamp: Long): String {
-        val date = Date(timestamp * 1000) // Nhân với 1000 để chuyển giây thành mili giây
-        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Định dạng ngày giờ
-        return format.format(date) // Chuyển thành chuỗi định dạng
+        val date = Date(timestamp * 1000)
+        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return format.format(date)
     }
 
 }

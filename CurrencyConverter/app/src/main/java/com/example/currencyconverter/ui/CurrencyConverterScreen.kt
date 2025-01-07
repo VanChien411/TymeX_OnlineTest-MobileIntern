@@ -30,8 +30,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.yml.charts.axis.AxisData
+import co.yml.charts.axis.DataCategoryOptions
+import co.yml.charts.common.model.Point
+import co.yml.charts.ui.barchart.BarChart
+import co.yml.charts.ui.barchart.models.BarChartData
+import co.yml.charts.ui.barchart.models.BarChartType
+import co.yml.charts.ui.barchart.models.BarData
+import co.yml.charts.ui.barchart.models.BarStyle
+
 import com.example.currencyconverter.R
+import com.example.currencyconverter.data.network.ExchangeRatesDataResponse
 import com.example.currencyconverter.viewmodel.CurrencyViewModel
+import kotlin.random.Random
 
 var viewModel: CurrencyViewModel = CurrencyViewModel()
 
@@ -78,8 +89,6 @@ fun CurrencyConverterScreen() {
                         CutLeftBox()
 
                     }
-
-                    //
                     Column(
                         modifier = Modifier
 
@@ -88,11 +97,20 @@ fun CurrencyConverterScreen() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        Spacer(modifier = Modifier.height(10.dp))
-                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
-                        CutLeftBox()
+
+                        Card(
+                            modifier = Modifier
+                                .background(Color.Green)
+                                .fillMaxWidth()  // Đảm bảo Card có chiều rộng đầy đủ
+                                .height(300.dp)  // Đảm bảo Card có chiều cao
+                        ) {
+                            BarchartWithSolidBars1()
+                        }
+
 
                     }
+                    //
+
                 }
 
             }else{
@@ -184,17 +202,23 @@ fun TextHeader(
 }
 @Composable
 fun NumberMoney(
-    number: Double,
+    number: Double?,
     color: Color = Color.Black,
-    onChageText: (Double) -> Unit = {}
+    onChageText: (Double?) -> Unit = {}
 ) {
 
     OutlinedTextField(
-        value = number.toString(),
+        value = number?.toString() ?: "",
         onValueChange = { newValue ->
-            // Kiểm tra nếu giá trị nhập vào là một số hợp lệ
-            if (newValue.isEmpty() || newValue.toDoubleOrNull() != null) {
-                newValue.toDoubleOrNull()?.let { onChageText(it) }
+            if (newValue.isEmpty()) {
+                onChageText(null)
+            } else {
+                val newNumber = newValue.toDoubleOrNull()
+                if (newNumber != null) {
+                    onChageText(newNumber)
+                } else {
+                    onChageText(null)
+                }
             }
         },
         keyboardOptions = KeyboardOptions.Default.copy(
@@ -210,8 +234,8 @@ fun NumberMoney(
 
             //setting the text field background when it is disabled
             disabledContainerColor = Color.White,
-            focusedIndicatorColor = Color.Transparent, // Ẩn thanh gạch dưới khi có focus
-            unfocusedIndicatorColor = Color.Transparent // Ẩn thanh gạch dưới khi không có focus
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
         ),
 
         modifier = Modifier
@@ -237,7 +261,7 @@ fun TextLabel(content: String?,fontSize: TextUnit = 17.sp, textAlign: TextAlign 
 
 }
 @Composable
-fun TextWithDropdown( money:Double,onChageText: (Double)-> Unit = {}, onChageRate:(String)-> Unit ={},  style: TextStyle = MaterialTheme.typography.bodyLarge, moneyType : String? = null, items : List<String>? = null) {
+fun TextWithDropdown( money:Double?,onChageText: (Double?)-> Unit = {}, onChageRate:(String)-> Unit ={},  style: TextStyle = MaterialTheme.typography.bodyLarge, moneyType : String? = null, items : List<String>? = null) {
     var expanded by remember { mutableStateOf(false) }
 
 
@@ -325,7 +349,7 @@ fun ButtonDefault(onClick: () -> Unit, text: String) {
         modifier = Modifier.padding(5.dp) // Thêm padding xung quanh nếu cần
     ) {
         Text(text = text,
-            fontSize = 22.sp,
+            fontSize = 20.sp,
             style = MaterialTheme.typography.labelLarge)
 
 
@@ -369,8 +393,8 @@ fun CutLeftBox() {
                 ) {
                     Column {
                         TextLabel("Số tiền")
-                        TextWithDropdown(fromNumber?:0.0, moneyType = fromRate , items = list?.toList() ?: emptyList(), onChageText ={ newValue -> viewModel.updateFromNumber(newValue)}, onChageRate = {newValue -> viewModel.updateFromRate(newValue)})
-                        Spacer(modifier = Modifier.height(15.dp))
+                        TextWithDropdown(fromNumber, moneyType = fromRate , items = list?.toList() ?: emptyList(), onChageText ={ newValue -> viewModel.updateFromNumber(newValue)}, onChageRate = {newValue -> viewModel.updateFromRate(newValue)})
+                        Spacer(modifier = Modifier.height(10.dp))
                         Image(
                             painter = painterResource(id = R.drawable.swap_calls), // Thay R.drawable.image bằng tên tệp ảnh của bạn
                             contentDescription = "Image Description", // Mô tả cho ảnh
@@ -381,7 +405,7 @@ fun CutLeftBox() {
                                 }
                         )
                         TextLabel("Chuyển thành")
-                        TextWithDropdown(toNumber?:0.0, moneyType = toRate, items = list?.toList() ?: emptyList(), onChageText ={ newValue -> viewModel.updateToNumber(newValue)}, onChageRate = {newValue -> viewModel.updateToRate(newValue)})
+                        TextWithDropdown(toNumber, moneyType = toRate, items = list?.toList() ?: emptyList(), onChageText ={ newValue -> viewModel.updateToNumber(newValue)}, onChageRate = {newValue -> viewModel.updateToRate(newValue)})
                     }
 
                 }
@@ -401,6 +425,7 @@ fun CutLeftBox() {
 
                 Row(){
                     ButtonDefault(onClick = { viewModel.exchangeRates()}, "Chuyển đổi")
+
                     TextLabel("Thời gian cập nhập giá\n$timeLine", fontSize = 15.sp, textAlign = TextAlign.Right, color = Color.Gray)
 
                 }
@@ -414,3 +439,142 @@ fun CutLeftBox() {
     }
 }
 
+@Composable
+fun BarchartWithSolidBars1() {
+    val exchangeRates by viewModel.exchangeRates.observeAsState()
+    if (exchangeRates?.body() != null) {
+        val rates = exchangeRates?.body()?.rates ?: emptyMap()
+
+        // Tính toán maxRange từ các tỷ giá, nếu không có tỷ giá thì dùng giá trị mặc định
+        var maxRange = getMaxRangeFromRates(rates)
+
+        // Tính toán yStepSize dựa trên maxRange, tùy chỉnh cho từng phạm vi giá trị
+        val yStepSize = when {
+            maxRange > 1_000_000 -> 30
+            maxRange > 100_000 -> {
+                maxRange /= 10000
+                20}
+            maxRange > 50_000 -> {
+                maxRange /= 500
+                10
+            }
+            else -> 7
+        }
+
+        // Lấy dữ liệu bar chart từ tỷ giá và áp dụng logarit cho trục X và Y
+        val barData = exchangeRates?.body()?.let {
+            getBarChartData(it, BarChartType.VERTICAL, DataCategoryOptions())
+        }?.mapIndexed { index, bar ->
+            // Áp dụng logarit cho giá trị trục X (tỷ giá đồng tiền)
+
+            // Cập nhật giá trị cho trục Y của cột
+            val logValueY = ((bar.point.y / maxRange.toFloat()) * 100).coerceAtMost(maxRange.toFloat()) // Tỷ lệ phần trăm của giá trị y theo maxRange // Lấy logarit của point.y
+
+            bar.copy(point = Point(bar.point.x, logValueY.toFloat()))
+        }
+        // Thiết lập trục X
+        val xAxisData = AxisData.Builder()
+            .axisStepSize(20.dp)
+            .steps(100) // Thiết lập số bước trên trục X
+            .bottomPadding(40.dp)
+            .axisLabelAngle(0f)  // Góc xoay nhãn trục X
+            .startDrawPadding(20.dp)
+            .backgroundColor(MaterialTheme.colorScheme.background)
+            .axisLabelColor(MaterialTheme.colorScheme.onBackground)
+            .axisLineColor(MaterialTheme.colorScheme.onBackground)
+            .labelData { index -> barData?.get(index)?.label ?: "N/A" }
+            .build()
+
+        // Thiết lập trục Y với các bước nhảy tùy chỉnh
+        val yAxisData = AxisData.Builder()
+            .steps(yStepSize)  // Cập nhật bước nhảy trên trục Y
+            .labelAndAxisLinePadding(20.dp)
+            .backgroundColor(MaterialTheme.colorScheme.background)
+            .axisLabelColor(MaterialTheme.colorScheme.onBackground)
+            .axisLineColor(MaterialTheme.colorScheme.onBackground)
+            .axisOffset(20.dp)
+            .labelData { index ->
+                val value = (index * (maxRange / yStepSize)).toDouble()
+                formatLargeNumber(value)
+            }
+            .build()
+
+        // Tạo dữ liệu biểu đồ
+        val barChartData = barData?.let {
+            BarChartData(
+                chartData = it,
+                xAxisData = xAxisData,
+                yAxisData = yAxisData,
+                barStyle = BarStyle(
+                    paddingBetweenBars = 5.dp,
+                    barWidth = 25.dp
+                ),
+                showYAxis = true,
+                showXAxis = true,
+                horizontalExtraSpace = 10.dp
+            )
+        }
+
+        // Hiển thị biểu đồ nếu dữ liệu hợp lệ
+        barChartData?.let {
+            Card(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp)
+            ) {
+                // Đảm bảo bar chart có hiển thị khi hover hoặc tương tác
+                BarChart(modifier = Modifier.height(350.dp), barChartData = it)
+            }
+        }
+    }
+}
+
+fun getBarChartData(
+    exchangeRatesData: ExchangeRatesDataResponse,
+    barChartType: BarChartType,
+    dataCategoryOptions: DataCategoryOptions
+): List<BarData> {
+    val list = arrayListOf<BarData>()
+    val rates = exchangeRatesData.rates
+
+    var index = 0
+    for ((currency, rate) in rates) {
+
+        val label = currency
+        val value = rate.toFloat()
+
+        val point = when (barChartType) {
+            BarChartType.VERTICAL -> {
+                Point(index.toFloat(), rate.toFloat())
+            }
+            BarChartType.HORIZONTAL -> {
+                Point(rate.toFloat(), index.toFloat())
+            }
+        }
+
+        list.add(
+            BarData(
+                point = point,
+                color = Color(
+                    Random.nextInt(256), Random.nextInt(256), Random.nextInt(256)
+                ),
+                dataCategoryOptions = dataCategoryOptions,
+                label = label
+            )
+        )
+        index++
+    }
+    return list
+}
+
+fun getMaxRangeFromRates(rates: Map<String, Double>): Double {
+    return (rates.values.maxOrNull() ?: 50.0) * 1.1
+}
+
+fun formatLargeNumber(value: Double): String {
+    return when {
+        value >= 1_000_000 -> "${(value / 1_000_000).toInt()}M"
+        value >= 1_000 -> "${(value / 1_000).toInt()}K"
+        else -> value.toInt().toString()
+    }
+}

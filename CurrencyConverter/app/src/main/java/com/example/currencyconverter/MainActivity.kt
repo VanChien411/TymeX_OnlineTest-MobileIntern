@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.currencyconverter.ui.screens.CurrencyConverterScreen
 import com.example.currencyconverter.ui.theme.CurrencyConverterTheme
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +19,9 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             CurrencyConverterTheme {
+                Locale.setDefault(Locale.US)
+
+//                GreetingPreview()
                 CurrencyConverterScreen()
             }
 
@@ -32,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
+
     Text(
         text = "Hello $name!",
         modifier = modifier,
