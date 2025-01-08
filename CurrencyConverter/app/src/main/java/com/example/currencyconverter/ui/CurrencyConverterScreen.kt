@@ -546,7 +546,7 @@ fun BarchartWithSolidBars1() {
             var logValueY:Float = 0F
             // Cập nhật giá trị cho trục Y của cột
             if(bar.point.y.toInt() != 0 && maxRange.toInt() != 0){
-                logValueY = (((bar.point.y /( maxRange/1.1).toFloat()) * 100 ) * maxRange/100).coerceAtMost(maxRange)
+                logValueY = (bar.point.y).coerceAtMost(maxRange.toFloat())
                     .toFloat() // Tỷ lệ phần trăm của giá trị y theo maxRange // Lấy logarit của point.y
 
 
