@@ -96,7 +96,7 @@ fun BarchartWithSolidBars() {
         .axisStepSize(30.dp)
         .steps(barData.size - 1)
         .bottomPadding(40.dp)
-        .axisLabelAngle(0f)
+        .axisLabelAngle(90f)
         .startDrawPadding(48.dp)
         .labelData { index -> barData[index].label }
         .build()

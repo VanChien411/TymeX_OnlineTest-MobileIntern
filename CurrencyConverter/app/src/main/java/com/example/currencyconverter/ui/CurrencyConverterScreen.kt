@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +43,7 @@ import co.yml.charts.ui.barchart.models.BarStyle
 import com.example.currencyconverter.R
 import com.example.currencyconverter.data.network.ExchangeRatesDataResponse
 import com.example.currencyconverter.viewmodel.CurrencyViewModel
+import java.text.DecimalFormat
 import kotlin.random.Random
 
 var viewModel: CurrencyViewModel = CurrencyViewModel()
@@ -101,54 +103,71 @@ fun CurrencyConverterScreen() {
                         Card(
                             modifier = Modifier
                                 .background(Color.Green)
-                                .fillMaxWidth()  // Đảm bảo Card có chiều rộng đầy đủ
-                                .height(300.dp)  // Đảm bảo Card có chiều cao
+                                .fillMaxWidth()
+                                .height(400.dp)
                         ) {
+
+                            FuncMaxRange()
                             BarchartWithSolidBars1()
+
                         }
-
-
+                        Spacer(modifier = Modifier.height(30.dp))
                     }
                     //
 
                 }
 
             }else{
-                Row ( modifier = Modifier
-                    .fillMaxSize()
-                    .background( MaterialTheme.colorScheme.background).windowInsetsPadding(WindowInsets.statusBars),
-                    verticalAlignment = Alignment.CenterVertically)
-                {
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp)
-                        ,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ){
+                    Row ( modifier = Modifier
+                        .fillMaxSize()
+                        .background( MaterialTheme.colorScheme.background),
+                    )
+                    {
 
-                        Spacer(modifier = Modifier.height(10.dp))
-                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
-                        CutLeftBox()
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(16.dp)
+                            ,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
 
-                    }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
+                            CutLeftBox()
 
-                    //
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp)
-                        ,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                        }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-                        // Kiểm tra các giá trị nullable và tránh lỗi null bằng cách sử dụng safe call (?.) và elvis operator (?:)
-                        CutLeftBox()
+                        //
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(16.dp)
+                            ,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
 
+                            Card(
+                                modifier = Modifier
+                                    .background(Color.Green)
+                                    .fillMaxWidth()
+                                    .height(400.dp)
+                            ) {
+
+                                FuncMaxRange()
+                                BarchartWithSolidBars1()
+
+                            }
+                            Spacer(modifier = Modifier.height(30.dp))
+
+                        }
                     }
                 }
+
             }
          }
 
@@ -178,7 +197,16 @@ fun Loading(){
     }
 
 }
-
+@Composable
+fun FuncMaxRange(){
+    val priceForm by viewModel.priceForm.observeAsState()
+    Row(
+        modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxWidth()
+    ){
+        NumberOutlinedTextField(priceForm, label = "Khung giá", onChageText ={ newValue -> viewModel.updatePriceForm(newValue)})
+        ButtonDefault(onClick = { viewModel.updateMaxRangeVM() }, "Xác nhận", fontSize = 16.sp, contentPadding = PaddingValues(16.dp))
+    }
+}
 @Composable
 fun TextHeader(
     content: String,
@@ -197,6 +225,52 @@ fun TextHeader(
         modifier = modifier,
         textAlign = textAlign,
 
+
+    )
+}
+@Composable
+fun NumberOutlinedTextField(
+    number: Double?,
+    color: Color = Color.Black,
+    onChageText: (Double?) -> Unit = {},
+    width: Dp = 150.dp,
+    label: String = "",
+){
+    OutlinedTextField(
+        value = number?.toString() ?: "",
+        onValueChange = { newValue ->
+            if (newValue.isEmpty()) {
+                onChageText(null)
+            } else {
+                val newNumber = newValue.toDoubleOrNull()
+                if (newNumber != null) {
+                    onChageText(newNumber)
+                } else {
+                    onChageText(null)
+                }
+            }
+        },
+        keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = KeyboardType.Number // Chỉ hiển thị bàn phím số
+        ),
+        textStyle = TextStyle(color = color, fontWeight = FontWeight.Bold,fontSize = 20.sp,), // Màu văn bản của TextField
+        colors = TextFieldDefaults.colors(
+            //setting the text field background when it is focused
+//            focusedContainerColor = Color.White,
+
+            //setting the text field background when it is unfocused or initial state
+            unfocusedContainerColor = Color.White,
+
+            //setting the text field background when it is disabled
+//            disabledContainerColor = Color.White,
+//            focusedIndicatorColor = Color.Transparent,
+//            unfocusedIndicatorColor = Color.Transparent
+        ),
+        label = { Text(label) },
+        modifier = Modifier
+            .height(60.dp)
+            .wrapContentHeight(Alignment.CenterVertically) // Căn giữa nội dung theo chiều dọc
+            .width(width)
 
     )
 }
@@ -336,7 +410,7 @@ fun TextWithDropdown( money:Double?,onChageText: (Double?)-> Unit = {}, onChageR
 }
 
 @Composable
-fun ButtonDefault(onClick: () -> Unit, text: String) {
+fun ButtonDefault(onClick: () -> Unit, text: String, fontSize: TextUnit = 20.sp, contentPadding:PaddingValues = PaddingValues(17.dp)) {
 
     Button(
         onClick = onClick,
@@ -345,11 +419,11 @@ fun ButtonDefault(onClick: () -> Unit, text: String) {
             contentColor = Color.Black         // Màu chữ đen
         ),
         shape = RoundedCornerShape(4.dp),
-        contentPadding = PaddingValues(17.dp),
+        contentPadding = contentPadding,
         modifier = Modifier.padding(5.dp) // Thêm padding xung quanh nếu cần
     ) {
         Text(text = text,
-            fontSize = 20.sp,
+            fontSize = fontSize,
             style = MaterialTheme.typography.labelLarge)
 
 
@@ -424,7 +498,9 @@ fun CutLeftBox() {
                 }
 
                 Row(){
-                    ButtonDefault(onClick = { viewModel.exchangeRates()}, "Chuyển đổi")
+                    ButtonDefault(onClick = {
+                        viewModel.exchangeRates()
+                                            }, "Chuyển đổi")
 
                     TextLabel("Thời gian cập nhập giá\n$timeLine", fontSize = 15.sp, textAlign = TextAlign.Right, color = Color.Gray)
 
@@ -441,9 +517,11 @@ fun CutLeftBox() {
 
 @Composable
 fun BarchartWithSolidBars1() {
-    val exchangeRates by viewModel.exchangeRates.observeAsState()
-    if (exchangeRates?.body() != null) {
-        val rates = exchangeRates?.body()?.rates ?: emptyMap()
+    val exchangeRatesChart by viewModel.exchangeRates.observeAsState()
+    val maxRangeVM by viewModel.maxRange.observeAsState()
+
+    if (exchangeRatesChart?.body() != null) {
+        val rates = exchangeRatesChart?.body()?.rates ?: emptyMap()
 
         // Tính toán maxRange từ các tỷ giá, nếu không có tỷ giá thì dùng giá trị mặc định
         var maxRange = getMaxRangeFromRates(rates)
@@ -452,17 +530,16 @@ fun BarchartWithSolidBars1() {
         val yStepSize = when {
             maxRange > 1_000_000 -> 30
             maxRange > 100_000 -> {
-                maxRange /= 10000
                 20}
             maxRange > 50_000 -> {
-                maxRange /= 500
                 10
             }
             else -> 7
         }
 
+        maxRange = maxRangeVM!!
         // Lấy dữ liệu bar chart từ tỷ giá và áp dụng logarit cho trục X và Y
-        val barData = exchangeRates?.body()?.let {
+        val barData = exchangeRatesChart?.body()?.let {
             getBarChartData(it, BarChartType.VERTICAL, DataCategoryOptions())
         }?.mapIndexed { index, bar ->
             // Áp dụng logarit cho giá trị trục X (tỷ giá đồng tiền)
@@ -476,13 +553,18 @@ fun BarchartWithSolidBars1() {
         val xAxisData = AxisData.Builder()
             .axisStepSize(20.dp)
             .steps(100) // Thiết lập số bước trên trục X
-            .bottomPadding(40.dp)
-            .axisLabelAngle(0f)  // Góc xoay nhãn trục X
+            .bottomPadding(50.dp)
+            .axisLabelAngle(40f)  // Góc xoay nhãn trục X
             .startDrawPadding(20.dp)
             .backgroundColor(MaterialTheme.colorScheme.background)
             .axisLabelColor(MaterialTheme.colorScheme.onBackground)
             .axisLineColor(MaterialTheme.colorScheme.onBackground)
-            .labelData { index -> barData?.get(index)?.label ?: "N/A" }
+            .labelData { index ->
+                val value = rates.values.toList()[index]
+                barData?.get(index)?.label?.let {
+                    it
+                } ?: "N/A"
+            }
             .build()
 
         // Thiết lập trục Y với các bước nhảy tùy chỉnh
@@ -520,7 +602,7 @@ fun BarchartWithSolidBars1() {
             Card(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(16.dp)
+                    .padding(10.dp)
             ) {
                 // Đảm bảo bar chart có hiển thị khi hover hoặc tương tác
                 BarChart(modifier = Modifier.height(350.dp), barChartData = it)
@@ -572,9 +654,11 @@ fun getMaxRangeFromRates(rates: Map<String, Double>): Double {
 }
 
 fun formatLargeNumber(value: Double): String {
+    val decimalFormat = DecimalFormat("#.#")
+
     return when {
-        value >= 1_000_000 -> "${(value / 1_000_000).toInt()}M"
-        value >= 1_000 -> "${(value / 1_000).toInt()}K"
-        else -> value.toInt().toString()
+        value >= 1_000_000 -> decimalFormat.format(value / 1_000_000) + "M"
+        value >= 1_000 -> decimalFormat.format(value / 1_000) + "K"
+        else -> decimalFormat.format(value )
     }
 }

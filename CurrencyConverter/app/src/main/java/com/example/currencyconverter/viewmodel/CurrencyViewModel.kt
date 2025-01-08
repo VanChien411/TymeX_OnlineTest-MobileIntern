@@ -3,6 +3,7 @@ package com.example.currencyconverter.viewmodel
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +25,10 @@ class CurrencyViewModel() : ViewModel() {
     val networkError : LiveData<Boolean?> get() = _networkError
     private val _exchangeRates = MutableLiveData<Response<ExchangeRatesDataResponse>?>()
     val exchangeRates: LiveData<Response<ExchangeRatesDataResponse>?> = _exchangeRates
+
+    private var _exchangeRatesChart = MutableLiveData<Response<ExchangeRatesDataResponse>?>()
+    val exchangeRatesChart: LiveData<Response<ExchangeRatesDataResponse>?> = _exchangeRatesChart
+
     private val _moneyTypes = MutableLiveData<Set<String>>()
     val moneyTypes: LiveData<Set<String>> get() = _moneyTypes
     private val _result = MutableLiveData<String>("")
@@ -41,6 +46,10 @@ class CurrencyViewModel() : ViewModel() {
     private val _timeLine = MutableLiveData<String>("")
     val timeLine: LiveData<String> get() = _timeLine
 
+    private val _priceForm = MutableLiveData<Double?>(300.0)
+    val priceForm: LiveData<Double?> get() = _priceForm
+    private val _maxRange = MutableLiveData<Double?>(300.0)
+    val maxRange: LiveData<Double?> get() = _maxRange
     fun updateToNumber(newValue: Double?) {
         _toNumber.value = newValue
     }
@@ -53,6 +62,28 @@ class CurrencyViewModel() : ViewModel() {
     fun updateToRate(newValue: String){
         _toRate.value = newValue
     }
+    fun updatePriceForm(newValue: Double?){
+        _priceForm.value = newValue
+    }
+    fun updateMaxRange(newValue: Double?){
+        _maxRange.value = newValue
+    }
+    fun updateExchangeRates(response: Response<ExchangeRatesDataResponse>?) {
+        _exchangeRates.value = response
+    }
+    // MediatorLiveData để theo dõi sự thay đổi của _exchangeRates
+    private val mediatorLiveData = MediatorLiveData<Response<ExchangeRatesDataResponse>?>().apply {
+        // Khi _exchangeRates thay đổi, cập nhật _exchangeRatesChart
+        addSource(_exchangeRates) { newExchangeRates ->
+            _exchangeRatesChart.value = newExchangeRates
+        }
+    }
+
+    init {
+        // Gắn MediatorLiveData làm nguồn cập nhật cho _exchangeRatesChart
+        _exchangeRatesChart = mediatorLiveData
+    }
+
 
 
     fun fetchExchangeRates() {
@@ -154,6 +185,9 @@ class CurrencyViewModel() : ViewModel() {
         val date = Date(timestamp * 1000)
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         return format.format(date)
+    }
+    fun updateMaxRangeVM(){
+        _maxRange.value = _priceForm.value
     }
 
 }

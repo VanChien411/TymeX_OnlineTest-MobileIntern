@@ -21,15 +21,9 @@ class MainActivity : ComponentActivity() {
             CurrencyConverterTheme {
                 Locale.setDefault(Locale.US)
 
-//                GreetingPreview()
                 CurrencyConverterScreen()
             }
 
-
-//            // Tự động fetch dữ liệu khi Activity mở
-//            LaunchedEffect(Unit) {
-//                viewModel.fetchExchangeRates()
-//            }
         }
     }
 }
