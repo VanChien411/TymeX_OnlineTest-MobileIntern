@@ -187,7 +187,7 @@ class CurrencyViewModel() : ViewModel() {
         return format.format(date)
     }
     fun updateMaxRangeVM(){
-        _maxRange.value = _priceForm.value
+        _maxRange.value = _priceForm.value?:10.0
     }
 
 }
