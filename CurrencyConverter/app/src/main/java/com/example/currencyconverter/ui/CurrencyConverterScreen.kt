@@ -536,16 +536,22 @@ fun BarchartWithSolidBars1() {
             }
             else -> 7
         }
-
         maxRange = maxRangeVM!!
+
         // Lấy dữ liệu bar chart từ tỷ giá và áp dụng logarit cho trục X và Y
         val barData = exchangeRatesChart?.body()?.let {
             getBarChartData(it, BarChartType.VERTICAL, DataCategoryOptions())
         }?.mapIndexed { index, bar ->
             // Áp dụng logarit cho giá trị trục X (tỷ giá đồng tiền)
-
+            var logValueY:Float = 0F
             // Cập nhật giá trị cho trục Y của cột
-            val logValueY = ((bar.point.y / maxRange.toFloat()) * 100).coerceAtMost(maxRange.toFloat()) // Tỷ lệ phần trăm của giá trị y theo maxRange // Lấy logarit của point.y
+            if(bar.point.y.toInt() != 0 && maxRange.toInt() != 0){
+                logValueY = (((bar.point.y /( maxRange/1.1).toFloat()) * 100 ) * maxRange/100).coerceAtMost(maxRange)
+                    .toFloat() // Tỷ lệ phần trăm của giá trị y theo maxRange // Lấy logarit của point.y
+
+
+            }
+
 
             bar.copy(point = Point(bar.point.x, logValueY.toFloat()))
         }

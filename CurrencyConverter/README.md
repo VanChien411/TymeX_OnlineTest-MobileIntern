@@ -96,7 +96,7 @@ This application is a currency converter that allows users to input an amount an
 
 ## 7. Notes and Development Challenges
 ### Notes:
-- **Data Source**: The app uses a free API to fetch exchange rate data, which has a request limit. To optimize performance, data is fetched on app launch and when the user switches the interface.
+- **Data Source**: The app uses the free API to get the reward rate, there are request limits, and the direct conversion API does not apply to the free API. For optimal performance, data is fetched at app launch and when the user switches interfaces, and conversions are recalculated from the API data.
 - **Result Formatting**: Conversion results are formatted according to international standards using `DecimalFormat`, with U.S. style number separation (dot for decimals).
 
 ### Challenges:
