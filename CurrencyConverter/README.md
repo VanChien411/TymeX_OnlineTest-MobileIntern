@@ -110,6 +110,8 @@ This application is a currency converter that allows users to input an amount an
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 ---
+## Video
+Video - [Intern mobile test TymeX](https://youtu.be/pB_p2IGbpzw?si=8vRIXm_VlrZRxH6P)
 
 ## Author
 Van Chien - [GitHub Profile](https://github.com/VanChien411)

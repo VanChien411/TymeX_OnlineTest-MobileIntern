@@ -57,6 +57,8 @@ Example:
 ```plaintext
 sdk.dir=C:\Users\admin\AppData\Local\Android\Sdk
 ```
+## Video
+Video - [Intern mobile test TymeX](https://youtu.be/pB_p2IGbpzw?si=8vRIXm_VlrZRxH6P)
 
 ## Author
 Van Chien - [GitHub Profile](https://github.com/VanChien411)
